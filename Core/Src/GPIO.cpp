@@ -1,25 +1,6 @@
 #include "GPIO.h"
 
 namespace periph{
-	
-		// void set_pin(GPIO_TypeDef * gpio, std::uint32_t pin ,std::uint8_t m){
-		// 	gpio->MODER &= ~((1U << pin * 2) | (1U << (pin * 2 + 1))); 
-		// 	if(m == INPUT) return; 		
-		// 	gpio->MODER |= (m << (pin * 2)); 								
-		//  }
-			
-		// 	void set_pin_value(GPIO_TypeDef * gpio, std::uint32_t pin, std::int32_t state){	
-		// 		if(state == LOW) gpio->ODR &= ~(1U << pin);
-		// 		else gpio->ODR |= (1U << pin); 		
-		// 	}
-	
-		// 	void set_afrl(GPIO_TypeDef * gpio, std::uint32_t val, std::uint32_t reg){
-		// 		gpio->AFR[0] |= (val << reg);  
-		// 	}
-		
-		// 	void set_afrh(GPIO_TypeDef * gpio, std::uint32_t val, std::uint32_t reg){
-		// 		gpio->AFR[1] |= (val << reg);  
-		// 	}
 	GPIO::GPIO(const config& _config){
 		m_gpio = _config.gpio;
 		m_pin  = _config.pin;
@@ -41,6 +22,18 @@ namespace periph{
 
 	void GPIO::Toggle(){
 		m_gpio->ODR ^= (1U << m_pin);
+	}
+
+	void GPIO::SetGPIO(const config& _config){
+		_config.gpio->MODER &= ~((1U << _config.pin * 2) | (1U << _config.pin * 2));
+		if(_config.mode != GPIO::Mode::Input) {
+			_config.gpio->MODER |= ((std::uint32_t)_config.mode << (_config.pin * 2));
+		}
+
+		if(_config.afrh_value == 0x0U && _config.afrl_value == 0x0U) return;
+
+		_config.gpio->AFR[0] |= (_config.afrl_value << _config.afrl_bit);
+		_config.gpio->AFR[1] |= (_config.afrh_value << _config.afrh_bit);
 	}
 		
 	

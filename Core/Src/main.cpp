@@ -23,6 +23,8 @@
 
 void SystemClock_Config(void);
 
+periph::GPIO::config gpioa5_config;
+periph::GPIO gpioa5(gpioa5_config);
 
 /**
   * @brief  The application entry point.
@@ -34,13 +36,17 @@ int main(void)
   SystemClock_Config();
   RCC->AHBENR  |= RCC_AHBENR_GPIOAEN;
   utils::delay::Init();
-  periph::GPIO::config gpioa5_config;
 
+  //GPIOA5 configuration
   gpioa5_config.mode = periph::GPIO::Mode::Output;
   gpioa5_config.gpio = GPIOA;
   gpioa5_config.pin  = 5;
 
-  periph::GPIO gpioa5(gpioa5_config);
+  //UART2 configuration
+
+  //UART3 configuration
+
+
 
   while (1)
   {
