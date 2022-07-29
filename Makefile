@@ -60,6 +60,9 @@ CXX_SOURCES = \
 Core/Src/main.cpp \
 Core/Src/GPIO.cpp \
 Core/Src/Utils.cpp \
+Core/Src/UART.cpp \
+Core/Src/SHTC3.cpp \
+Core/Src/ADC.cpp \
 
 # ASM sources
 ASM_SOURCES =  \

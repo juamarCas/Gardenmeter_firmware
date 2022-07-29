@@ -20,11 +20,14 @@
 #include "main.h"
 #include "GPIO.h"
 #include "Utils.h"
+#include "SHTC3.h"
+#include "UART.h"
 
 void SystemClock_Config(void);
+static void MX_I2C1_Init(void);
+void UART3_init(void);
 
-periph::GPIO::config gpioa5_config;
-periph::GPIO gpioa5(gpioa5_config);
+I2C_HandleTypeDef hi2c1;
 
 /**
   * @brief  The application entry point.
@@ -34,24 +37,40 @@ int main(void)
 {
   HAL_Init();
   SystemClock_Config();
-  RCC->AHBENR  |= RCC_AHBENR_GPIOAEN;
+  periph::GPIO::config gpioa5_config;
+ 
   utils::delay::Init();
+
+  //RCC configuration
+  RCC->AHBENR  |= RCC_AHBENR_GPIOBEN;
+	RCC->AHBENR  |= RCC_AHBENR_GPIOAEN;
+	RCC->AHBENR  |= RCC_AHBENR_DMA1EN;
+	RCC->AHBENR  |= RCC_AHBENR_ADC12EN;
+	RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
 
   //GPIOA5 configuration
   gpioa5_config.mode = periph::GPIO::Mode::Output;
   gpioa5_config.gpio = GPIOA;
   gpioa5_config.pin  = 5;
+  periph::GPIO gpioa5(gpioa5_config);
 
   //UART2 configuration
 
   //UART3 configuration
+  UART3_init();
+  //ADC configuration
+
+  //I2C configuration
 
 
-
+  const char * data = "Hello\n";
   while (1)
   {
      gpioa5.Toggle();
-     utils::delay::ms(100);
+     periph::UART::write(USART3, data, 6);
+     utils::delay::ms(3000);
   }
   
 }
@@ -92,9 +111,62 @@ void SystemClock_Config(void)
   }
 }
 
-/* USER CODE BEGIN 4 */
 
-/* USER CODE END 4 */
+static void MX_I2C1_Init(void)
+{
+
+
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x00201D2B;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+
+}
+
+//configure gpios nessesary to make UART3 works
+void UART3_init(void){
+  periph::GPIO::config gpiob10_config;
+  periph::GPIO::config gpiob11_config;
+  gpiob10_config.gpio = GPIOB;
+  gpiob10_config.pin  = 10;
+  gpiob10_config.mode = periph::GPIO::Mode::Alternate;
+  gpiob10_config.afrh_bit   = 0x8U;
+  gpiob10_config.afrh_value = 0x7U;
+
+  gpiob11_config.gpio = GPIOB;
+  gpiob11_config.pin  = 11;
+  gpiob11_config.mode = periph::GPIO::Mode::Alternate;
+  gpiob11_config.afrh_bit   = 0x0CU;
+  gpiob11_config.afrh_value = 0x7U;
+
+  periph::GPIO::SetGPIO(gpiob10_config);
+  periph::GPIO::SetGPIO(gpiob11_config);
+
+  periph::UART::Init(USART3, 9600, 8000000);
+
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
