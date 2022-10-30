@@ -31,7 +31,7 @@ namespace periph{
 			dma_ch->CCR |= DMA_CCR_EN;				
 			
 			
-			 
+			Enable_regulator(adc); 
 			Enable(adc); 
 			Calib(adc); 
 			Enable(adc); 
@@ -43,14 +43,12 @@ namespace periph{
 		}
 		
 		void Enable(ADC_TypeDef * adc){
-			adc->CR = 0;
-			Enable_regulator(adc);
 			adc->CR |= ADC_CR_ADEN; 
+			adc->IER |= ADC_IER_ADRDYIE;
 			while(!(adc->ISR & ADC_ISR_ADRDY)){}
 		}
 		
 		void Disable(ADC_TypeDef * adc){
-			
 			adc->CR |= ADC_CR_ADDIS; 
 			while((adc->CR & ADC_CR_ADEN)){}
 		}

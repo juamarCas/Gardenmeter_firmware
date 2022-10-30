@@ -38,8 +38,12 @@ void UART3_init(void);
 void ConfigureI2CPins(periph::GPIO::config& scl_pin, periph::GPIO::config& sda_pin);
 void ConfigUSARTPins(periph::GPIO::config& tx_pin, periph::GPIO::config& rx_pin);
 
-
 I2C_HandleTypeDef hi2c1;
+
+periph::GPIO * gpioc13 = new periph::GPIO();
+SHTC3 _shtc3(&hi2c1);
+
+
 
 std::uint16_t adc_dma_buffer[DMA_ADC_BUFFER_LENGTH] = {0,0};
 
@@ -88,15 +92,15 @@ extern "C"{
       STOP_ADC_CONVERTION;
       _passNextState = true;
       DMA1->IFCR |= DMA_IFCR_CTCIF1;
+      gpioc13->Toggle();
 
     }
   }
+
 }
 
 
 
-periph::GPIO * gpioc13 = new periph::GPIO();
-SHTC3 _shtc3(&hi2c1);
 
 
 int main(void)
@@ -128,6 +132,7 @@ int main(void)
 	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
 	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
 
+  ADC12_COMMON->CCR |= (1U << 17U);
   //gpio configuration
   gpioc13_config.mode = periph::GPIO::Mode::Output;
   gpioc13_config.gpio = GPIOC;
@@ -159,7 +164,7 @@ int main(void)
 
   ADC1->SQR1 = 0;
   ADC1->SQR1 |= ADC_LENGTH_3;
-
+  
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_1, ADC_SQ1_1);
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_2, ADC_SQ1_2);
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_3, ADC_SQ1_3);
@@ -167,11 +172,11 @@ int main(void)
   gpioc13->Toggle();
   NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
+  __enable_irq();
   MX_I2C1_Init();
   //Sensor initialization
   _shtc3.begin();
   const char * data = "Hello\n";
-  __enable_irq();
 
   states_ptr = &sm_states[0];
   while (1)
@@ -303,12 +308,13 @@ void State_MeasureSHTC3(){
 }
 
 void State_ReadADC(){
-  _passNextState = false;
-  START_ADC_CONVERTION;
+  // _passNextState = false;
+  // START_ADC_CONVERTION;
 }
 
 void State_SendData(){
-
+  const char * data = "hello\n";
+  periph::UART::write(USART1, data, sizeof(data) + 2);
 }
 
 void State_InitTimer(){
