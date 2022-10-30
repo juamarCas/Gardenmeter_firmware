@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file      startup_stm32f303xe.s
+  * @file      startup_stm32f303xc.s
   * @author    MCD Application Team
-  * @brief     STM32F303xE devices vector table for GCC toolchain.
+  * @brief     STM32F303xB/STM32F303xC devices vector table for GCC toolchain.
   *            This module performs:
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
@@ -195,7 +195,7 @@ g_pfnVectors:
 	.word	TIM8_TRG_COM_IRQHandler
 	.word	TIM8_CC_IRQHandler
 	.word	ADC3_IRQHandler
-	.word	FMC_IRQHandler
+	.word	0
 	.word	0
 	.word	0
 	.word	SPI3_IRQHandler
@@ -219,19 +219,16 @@ g_pfnVectors:
 	.word	0
 	.word	0
 	.word	0
-	.word	I2C3_EV_IRQHandler
-	.word	I2C3_ER_IRQHandler
+	.word	0
+	.word	0
 	.word	USB_HP_IRQHandler
 	.word	USB_LP_IRQHandler
 	.word	USBWakeUp_RMP_IRQHandler
-	.word	TIM20_BRK_IRQHandler
-	.word	TIM20_UP_IRQHandler
-	.word	TIM20_TRG_COM_IRQHandler
-	.word	TIM20_CC_IRQHandler
+	.word	0
+	.word	0
+	.word	0
+	.word	0
 	.word	FPU_IRQHandler
-	.word	0
-	.word	0
-	.word	SPI4_IRQHandler
 
 /*******************************************************************************
 *
@@ -412,9 +409,6 @@ g_pfnVectors:
 	.weak	ADC3_IRQHandler
 	.thumb_set ADC3_IRQHandler,Default_Handler
 
-	.weak	FMC_IRQHandler
-	.thumb_set FMC_IRQHandler,Default_Handler
-
 	.weak	SPI3_IRQHandler
 	.thumb_set SPI3_IRQHandler,Default_Handler
 
@@ -457,12 +451,6 @@ g_pfnVectors:
 	.weak	COMP7_IRQHandler
 	.thumb_set COMP7_IRQHandler,Default_Handler	
 	
-	.weak	I2C3_EV_IRQHandler
-	.thumb_set I2C3_EV_IRQHandler,Default_Handler	
-	
-	.weak	I2C3_ER_IRQHandler
-	.thumb_set I2C3_ER_IRQHandler,Default_Handler	
-	
 	.weak	USB_HP_IRQHandler
 	.thumb_set USB_HP_IRQHandler,Default_Handler
 	
@@ -472,21 +460,6 @@ g_pfnVectors:
 	.weak	USBWakeUp_RMP_IRQHandler
 	.thumb_set USBWakeUp_RMP_IRQHandler,Default_Handler
 	
-	.weak	TIM20_BRK_IRQHandler
-	.thumb_set TIM20_BRK_IRQHandler,Default_Handler
-	
-	.weak	TIM20_UP_IRQHandler
-	.thumb_set TIM20_UP_IRQHandler,Default_Handler
-	
-	.weak	TIM20_TRG_COM_IRQHandler
-	.thumb_set TIM20_TRG_COM_IRQHandler,Default_Handler
-	
-	.weak	TIM20_CC_IRQHandler
-	.thumb_set TIM20_CC_IRQHandler,Default_Handler
-	
 	.weak	FPU_IRQHandler
 	.thumb_set FPU_IRQHandler,Default_Handler
-	
-	.weak	SPI4_IRQHandler
-	.thumb_set SPI4_IRQHandler,Default_Handler
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -1,7 +1,7 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : main.c
+  * @file           : main.cpp
   * @brief          : Main program body
   ******************************************************************************
   * @attention
@@ -22,55 +22,163 @@
 #include "Utils.h"
 #include "SHTC3.h"
 #include "UART.h"
+#include "ADC.h"
+#include "Payload.h"
+#include "State.h"
+
+
+#define DMA_ADC_BUFFER_LENGTH 3
+#define ADC_BUFFER_LENGTH DMA_ADC_BUFFER_LENGTH * 2
+#define START_ADC_CONVERTION ADC1->CR |= ADC_CR_ADSTART
+#define STOP_ADC_CONVERTION ADC1->CR |= ADC_CR_ADSTP
 
 void SystemClock_Config(void);
 static void MX_I2C1_Init(void);
 void UART3_init(void);
+void ConfigureI2CPins(periph::GPIO::config& scl_pin, periph::GPIO::config& sda_pin);
+void ConfigUSARTPins(periph::GPIO::config& tx_pin, periph::GPIO::config& rx_pin);
+
 
 I2C_HandleTypeDef hi2c1;
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
+std::uint16_t adc_dma_buffer[DMA_ADC_BUFFER_LENGTH] = {0,0};
+
+void State_MeasureSHTC3();
+void State_ReadADC();
+void State_SendData();
+void State_InitTimer();
+
+/*
+structure of each element of array:
+{
+  currentState,
+  NextState
+}
+*/
+states sm_states[4] = {
+  {
+    &State_MeasureSHTC3,
+    &sm_states[1]
+  },
+  {
+    &State_ReadADC,
+    &sm_states[2]
+  },
+  {
+    &State_SendData,
+    &sm_states[3]
+  },
+  {
+    &State_InitTimer,
+    &sm_states[0]
+  }
+
+};
+states * states_ptr;
+Payload _payload;
+
+
+bool _passNextState = true;
+extern "C"{
+  void DMA1_Channel1_IRQHandler(void){
+    if(DMA1->ISR & DMA_ISR_TCIF1){
+      _payload.moist     = adc_dma_buffer[0];
+      _payload.soil_temp = adc_dma_buffer[1];
+      _payload.light     = adc_dma_buffer[2];
+      STOP_ADC_CONVERTION;
+      _passNextState = true;
+      DMA1->IFCR |= DMA_IFCR_CTCIF1;
+
+    }
+  }
+}
+
+
+
+periph::GPIO * gpioc13 = new periph::GPIO();
+SHTC3 _shtc3(&hi2c1);
+
+
 int main(void)
 {
+  __disable_irq();
   HAL_Init();
   SystemClock_Config();
-  periph::GPIO::config gpioa5_config;
- 
+  
+  periph::GPIO::config gpioa0_config;
+  periph::GPIO::config gpioa1_config;
+  periph::GPIO::config gpioa2_config;
+  
+  periph::GPIO::config gpiob6_config;
+  periph::GPIO::config gpiob7_config;
+
+  periph::GPIO::config gpioc4_config;
+  periph::GPIO::config gpioc5_config;
+  periph::GPIO::config gpioc13_config;
+
   utils::delay::Init();
 
   //RCC configuration
   RCC->AHBENR  |= RCC_AHBENR_GPIOBEN;
 	RCC->AHBENR  |= RCC_AHBENR_GPIOAEN;
+  RCC->AHBENR  |= RCC_AHBENR_GPIOCEN;
 	RCC->AHBENR  |= RCC_AHBENR_DMA1EN;
 	RCC->AHBENR  |= RCC_AHBENR_ADC12EN;
-	RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+	RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
 	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
 
-  //GPIOA5 configuration
-  gpioa5_config.mode = periph::GPIO::Mode::Output;
-  gpioa5_config.gpio = GPIOA;
-  gpioa5_config.pin  = 5;
-  periph::GPIO gpioa5(gpioa5_config);
+  //gpio configuration
+  gpioc13_config.mode = periph::GPIO::Mode::Output;
+  gpioc13_config.gpio = GPIOC;
+  gpioc13_config.pin  = 13;
+  gpioc13->SetConfig(gpioc13_config);
 
-  //UART2 configuration
+  ConfigureI2CPins(gpiob6_config, gpiob7_config);
+  ConfigUSARTPins(gpioc4_config, gpioc5_config);
+ 
+  //pin configuration for the ADC
+  gpioa0_config.mode = periph::GPIO::Analog;
+  gpioa0_config.gpio = GPIOA;
+  gpioa0_config.pin  = 0;
 
-  //UART3 configuration
-  UART3_init();
-  //ADC configuration
+  gpioa1_config.mode = periph::GPIO::Analog;
+  gpioa1_config.gpio = GPIOA;
+  gpioa1_config.pin  = 1;
 
-  //I2C configuration
+  gpioa2_config.mode = periph::GPIO::Analog;
+  gpioa2_config.gpio = GPIOA;
+  gpioa2_config.pin  = 2;
 
+  periph::GPIO::SetGPIO(gpioa0_config);
+  periph::GPIO::SetGPIO(gpioa1_config);
+  periph::GPIO::SetGPIO(gpioa2_config);
 
+  DMA1_Channel1->CCR |= DMA_CCR_CIRC | DMA_CCR_MINC | DMA_CCR_PSIZE_0 | DMA_CCR_MSIZE_0;
+  DMA1_Channel1->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE;
+
+  ADC1->SQR1 = 0;
+  ADC1->SQR1 |= ADC_LENGTH_3;
+
+  periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_1, ADC_SQ1_1);
+  periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_2, ADC_SQ1_2);
+  periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_3, ADC_SQ1_3);
+  periph::ADC::DMA_Init(ADC1, DMA1_Channel1, adc_dma_buffer, DMA_ADC_BUFFER_LENGTH, ADC_LENGTH_3);
+  gpioc13->Toggle();
+  NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
+  MX_I2C1_Init();
+  //Sensor initialization
+  _shtc3.begin();
   const char * data = "Hello\n";
+  __enable_irq();
+
+  states_ptr = &sm_states[0];
   while (1)
   {
-     gpioa5.Toggle();
-     periph::UART::write(USART3, data, 6);
-     utils::delay::ms(3000);
+    (states_ptr->action_function)();
+    while(!_passNextState){}
+    states_ptr = states_ptr->next_state;
   }
   
 }
@@ -100,6 +208,7 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -145,27 +254,66 @@ static void MX_I2C1_Init(void)
 
 }
 
-//configure gpios nessesary to make UART3 works
-void UART3_init(void){
-  periph::GPIO::config gpiob10_config;
-  periph::GPIO::config gpiob11_config;
-  gpiob10_config.gpio = GPIOB;
-  gpiob10_config.pin  = 10;
-  gpiob10_config.mode = periph::GPIO::Mode::Alternate;
-  gpiob10_config.afrh_bit   = 0x8U;
-  gpiob10_config.afrh_value = 0x7U;
+void ConfigUSARTPins(periph::GPIO::config& tx_pin, periph::GPIO::config& rx_pin){
+  tx_pin.gpio       = GPIOC;
+  tx_pin.pin        = 4;
+  tx_pin.mode       = periph::GPIO::Mode::Alternate;
+  tx_pin.afrl_value = 0x7U;
+  tx_pin.afrl_bit   = 0x10U;
 
-  gpiob11_config.gpio = GPIOB;
-  gpiob11_config.pin  = 11;
-  gpiob11_config.mode = periph::GPIO::Mode::Alternate;
-  gpiob11_config.afrh_bit   = 0x0CU;
-  gpiob11_config.afrh_value = 0x7U;
+  rx_pin.gpio       = GPIOC;
+  rx_pin.pin        = 5;
+  rx_pin.mode       = periph::GPIO::Mode::Alternate;
+  rx_pin.afrl_value = 0x7U;
+  rx_pin.afrl_bit   = 0x14U;
 
-  periph::GPIO::SetGPIO(gpiob10_config);
-  periph::GPIO::SetGPIO(gpiob11_config);
 
-  periph::UART::Init(USART3, 9600, 8000000);
+  periph::GPIO::SetGPIO(tx_pin);
+  periph::GPIO::SetGPIO(rx_pin);
 
+  periph::UART::Init(USART1, 9600, 8000000);
+}
+
+void ConfigureI2CPins(periph::GPIO::config& scl_gpio, periph::GPIO::config& sda_gpio){
+  scl_gpio.mode       = periph::GPIO::Mode::Alternate;
+  scl_gpio.gpio       = GPIOB;
+  scl_gpio.pin        = 6;
+  scl_gpio.afrl_bit   = 0x18U;
+  scl_gpio.afrl_value = 0x4U;
+
+  sda_gpio.mode       = periph::GPIO::Mode::Alternate;
+  sda_gpio.gpio       = GPIOB;
+  sda_gpio.pin        = 7;
+  sda_gpio.afrl_bit   = 0x1CU;
+  sda_gpio.afrl_value = 0x4U;
+
+  periph::GPIO::SetGPIO(scl_gpio);
+  periph::GPIO::SetGPIO(sda_gpio);
+}
+
+//STATES
+
+void State_MeasureSHTC3(){
+    float temp;
+    float hum;
+    if(_shtc3.Read_sensor(temp, hum, SHTC3_NORMAL_MEASUREMENT_CMD)){
+      _payload.env_temp = temp;
+      _payload.env_hum  = hum;
+    }
+}
+
+void State_ReadADC(){
+  _passNextState = false;
+  START_ADC_CONVERTION;
+}
+
+void State_SendData(){
+
+}
+
+void State_InitTimer(){
+  gpioc13->Toggle();
+  utils::delay::ms(2000);
 }
 
 /**
