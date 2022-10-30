@@ -7,13 +7,17 @@
             ],
             "defines": [
                 "USE_HAL_DRIVER",
-                "STM32F303xE"
+                "DSTM32F303xC"
             ],
             "compilerPath": "/usr/bin/arm-none-eabi-g++",
             "cStandard": "gnu17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "ms-vscode.makefile-tools"
+            "intelliSenseMode": "gcc-arm",
+            "configurationProvider": "ms-vscode.makefile-tools",
+            "compilerArgs": [
+                "-mcpu=cortex-m4",
+                "-mthumb"
+            ]
         }
     ],
     "version": 4

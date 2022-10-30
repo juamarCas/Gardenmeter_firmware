@@ -66,7 +66,7 @@ Core/Src/ADC.cpp \
 
 # ASM sources
 ASM_SOURCES =  \
-startup_stm32f303xe.s
+startup_stm32f303xc.s
 
 
 #######################################
@@ -113,7 +113,7 @@ AS_DEFS =
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32F303xE
+-DSTM32F303xC
 
 
 # AS includes
@@ -157,7 +157,7 @@ CXXFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32F303RETx_FLASH.ld
+LDSCRIPT = STM32F303RBTx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys 

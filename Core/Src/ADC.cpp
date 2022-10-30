@@ -30,7 +30,8 @@ namespace periph{
 			dma_ch->CNDTR = buffer_length; 	
 			dma_ch->CCR |= DMA_CCR_EN;				
 			
-			Enable_regulator(adc); 
+			
+			 
 			Enable(adc); 
 			Calib(adc); 
 			Enable(adc); 
@@ -42,11 +43,14 @@ namespace periph{
 		}
 		
 		void Enable(ADC_TypeDef * adc){
+			adc->CR = 0;
+			Enable_regulator(adc);
 			adc->CR |= ADC_CR_ADEN; 
 			while(!(adc->ISR & ADC_ISR_ADRDY)){}
 		}
 		
 		void Disable(ADC_TypeDef * adc){
+			
 			adc->CR |= ADC_CR_ADDIS; 
 			while((adc->CR & ADC_CR_ADEN)){}
 		}
@@ -54,7 +58,7 @@ namespace periph{
 		void Enable_regulator(ADC_TypeDef * adc){ 
 			adc->CR &= ~(ADC_CR_ADVERGEN_CLEAR); 
 			adc->CR |= ADC_CR_ADVERGEN_ENABLE; 
-			utils::delay::us(25); 
+			utils::delay::us(30); 
 		}
 		
 		void Calib(ADC_TypeDef * adc){

@@ -33,6 +33,13 @@ namespace periph{
 				std::uint32_t m_pin;
 				std::uint32_t m_afrl;
 				std::uint32_t m_afrh;
+				std::uint32_t m_afrl_bit;
+				std::uint32_t m_afrh_bit;
+
+				GPIO::Mode m_mode;
+
+
+				void ApplyConfiguration();
 
 			public:
 			/**
@@ -41,17 +48,23 @@ namespace periph{
 			 * @param _configuration  structure with the gpio configuration
 			 */
 				GPIO(const config& _configuration);
+				GPIO(){}
 			/**
 			 * @brief toggles a gpio state
 			 * 
 			 */
 				void Toggle();
 			/**
-			 * @brief Sets a gpio state (los or high)
+			 * @brief Sets a gpio state (low or high)
 			 * 
 			 * @param state enumarator defining whic state wants the user
 			 */
 				void SetGPIO(GPIO::State state);
+			/**
+			 * @brief Updates gpio configuration
+			 * @param _config config structure representing the GPIO
+			*/
+				void SetConfig(GPIO::config& _config);
 
 			/**
 			 * @brief Sets a gpio without needing to create a class for it

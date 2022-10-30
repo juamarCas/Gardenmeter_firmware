@@ -46,11 +46,11 @@ namespace periph{
 		/*single conversion*/
 		void Init(ADC_TypeDef * adc, std::uint8_t length = ADC_LENGTH_1);
 		void DMA_Init(ADC_TypeDef * adc, DMA_Channel_TypeDef * dma_ch,std::uint16_t * buffer, std::uint32_t buffer_length ,std::uint8_t length = ADC_LENGTH_1);
-		/*
-		Set a adc sequence and channel
-		@param adc_sqr refers to the register, look at Register of sqr macros to see the options
-		@param channel, refers to ADC channel, look at  ADC channel number
-		@param sequece, sequence number of that channel of the adc refer to position of each sequence bits of the sqr register
+		/**
+		*Set a adc sequence and channel
+		*@param adc_sqr refers to the register, look at Register of sqr macros to see the options
+		*@param channel, refers to ADC channel, look at  ADC channel number
+		*@param sequece, sequence number of that channel of the adc refer to position of each sequence bits of the sqr register
 		*/
 		void SetChannelSequence(std::uint32_t adc_sqr, std::uint32_t channel, std::int32_t sequence); 
 		void Config_Sequence(ADC_TypeDef * adc, std::uint32_t Sequence); 
