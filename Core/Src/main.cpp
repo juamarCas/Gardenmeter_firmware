@@ -45,7 +45,7 @@ SHTC3 _shtc3(&hi2c1);
 
 
 
-std::uint16_t adc_dma_buffer[DMA_ADC_BUFFER_LENGTH] = {0,0};
+std::uint16_t adc_dma_buffer[DMA_ADC_BUFFER_LENGTH] = {0,0,0};
 
 void State_MeasureSHTC3();
 void State_ReadADC();
@@ -80,6 +80,8 @@ states sm_states[4] = {
 };
 states * states_ptr;
 Payload _payload;
+
+
 
 
 bool _passNextState = true;
@@ -163,8 +165,6 @@ int main(void)
 
   DMA1_Channel1->CCR |= DMA_CCR_CIRC | DMA_CCR_MINC | DMA_CCR_PSIZE_0 | DMA_CCR_MSIZE_0;
   DMA1_Channel1->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE;
-
-  ADC1->SQR1 |= ADC_LENGTH_3;
   
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_1, ADC_SQ1_1);
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_2, ADC_SQ1_2);
@@ -331,28 +331,9 @@ void State_InitTimer(){
   */
 void Error_Handler(void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
   }
-  /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */
