@@ -7,8 +7,9 @@ namespace periph{
 		m_afrl     = _config.afrl_value;
 		m_afrh     = _config.afrh_value;
 		m_mode     = _config.mode;
-		m_afrh_bit = _config.afrh_bit;
-		m_afrl_bit = _config.afrl_bit;
+		
+		m_afrh_bit_position = _config.afrh_bit_position;
+		m_afrl_bit_position = _config.afrl_bit_position;
 		ApplyConfiguration();
 
 	}
@@ -19,8 +20,10 @@ namespace periph{
 		m_afrl     = _config.afrl_value;
 		m_afrh     = _config.afrh_value;
 		m_mode     = _config.mode;
-		m_afrh_bit = _config.afrh_bit;
-		m_afrl_bit = _config.afrl_bit;
+
+
+		m_afrh_bit_position = _config.afrh_bit_position;
+		m_afrl_bit_position = _config.afrl_bit_position;
 		ApplyConfiguration();
 		
 	}
@@ -34,8 +37,8 @@ namespace periph{
 
 		if(m_afrh == 0x0U && m_afrl == 0x0U) return;
 
-		m_gpio->AFR[0] |= (m_afrl << m_afrl_bit);
-		m_gpio->AFR[1] |= (m_afrh << m_afrh_bit);
+		m_gpio->AFR[0] |= (m_afrl << m_afrl_bit_position);
+		m_gpio->AFR[1] |= (m_afrh << m_afrh_bit_position);
 	}
 
 	void GPIO::Toggle(){
@@ -50,8 +53,8 @@ namespace periph{
 
 		if(_config.afrh_value == 0x0U && _config.afrl_value == 0x0U) return;
 
-		_config.gpio->AFR[0] |= (_config.afrl_value << _config.afrl_bit);
-		_config.gpio->AFR[1] |= (_config.afrh_value << _config.afrh_bit);
+		_config.gpio->AFR[0] |= (_config.afrl_value << _config.afrl_bit_position);
+		_config.gpio->AFR[1] |= (_config.afrh_value << _config.afrh_bit_position);
 	}
 		
 	

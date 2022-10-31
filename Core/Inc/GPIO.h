@@ -20,10 +20,10 @@ namespace periph{
 				GPIO_TypeDef * gpio;
 				std::uint32_t pin;
 				GPIO::Mode mode;
-				std::uint32_t afrl_value = 0x0U;
-				std::uint32_t afrh_value = 0x0U;
-				std::uint32_t afrl_bit   = 0x0U;
-				std::uint32_t afrh_bit   = 0x0U;
+				std::uint32_t afrl_value          = 0x0U;
+				std::uint32_t afrh_value          = 0x0U;
+				std::uint32_t afrl_bit_position   = 0x0U;
+				std::uint32_t afrh_bit_position   = 0x0U;
 			} config;
 
 			~GPIO(){}
@@ -33,8 +33,8 @@ namespace periph{
 				std::uint32_t m_pin;
 				std::uint32_t m_afrl;
 				std::uint32_t m_afrh;
-				std::uint32_t m_afrl_bit;
-				std::uint32_t m_afrh_bit;
+				std::uint32_t m_afrl_bit_position;
+				std::uint32_t m_afrh_bit_position;
 
 				GPIO::Mode m_mode;
 

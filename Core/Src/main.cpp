@@ -86,10 +86,10 @@ bool _passNextState = true;
 extern "C"{
   void DMA1_Channel1_IRQHandler(void){
     if(DMA1->ISR & DMA_ISR_TCIF1){
+      STOP_ADC_CONVERTION;
       _payload.moist     = adc_dma_buffer[0];
       _payload.soil_temp = adc_dma_buffer[1];
       _payload.light     = adc_dma_buffer[2];
-      STOP_ADC_CONVERTION;
       _passNextState = true;
       DMA1->IFCR |= DMA_IFCR_CTCIF1;
       gpioc13->Toggle();
@@ -132,7 +132,9 @@ int main(void)
 	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
 	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
 
+  //prescale the ADC clock dividing it by 2!
   ADC12_COMMON->CCR |= (1U << 17U);
+
   //gpio configuration
   gpioc13_config.mode = periph::GPIO::Mode::Output;
   gpioc13_config.gpio = GPIOC;
@@ -162,20 +164,21 @@ int main(void)
   DMA1_Channel1->CCR |= DMA_CCR_CIRC | DMA_CCR_MINC | DMA_CCR_PSIZE_0 | DMA_CCR_MSIZE_0;
   DMA1_Channel1->CCR |= DMA_CCR_TCIE | DMA_CCR_TEIE;
 
-  ADC1->SQR1 = 0;
   ADC1->SQR1 |= ADC_LENGTH_3;
   
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_1, ADC_SQ1_1);
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_2, ADC_SQ1_2);
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_3, ADC_SQ1_3);
   periph::ADC::DMA_Init(ADC1, DMA1_Channel1, adc_dma_buffer, DMA_ADC_BUFFER_LENGTH, ADC_LENGTH_3);
-  gpioc13->Toggle();
+
   NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
   __enable_irq();
   MX_I2C1_Init();
+
   //Sensor initialization
   _shtc3.begin();
+  
   const char * data = "Hello\n";
 
   states_ptr = &sm_states[0];
@@ -264,13 +267,13 @@ void ConfigUSARTPins(periph::GPIO::config& tx_pin, periph::GPIO::config& rx_pin)
   tx_pin.pin        = 4;
   tx_pin.mode       = periph::GPIO::Mode::Alternate;
   tx_pin.afrl_value = 0x7U;
-  tx_pin.afrl_bit   = 0x10U;
+  tx_pin.afrl_bit_position   = 0x10U;
 
   rx_pin.gpio       = GPIOC;
   rx_pin.pin        = 5;
   rx_pin.mode       = periph::GPIO::Mode::Alternate;
   rx_pin.afrl_value = 0x7U;
-  rx_pin.afrl_bit   = 0x14U;
+  rx_pin.afrl_bit_position   = 0x14U;
 
 
   periph::GPIO::SetGPIO(tx_pin);
@@ -283,13 +286,13 @@ void ConfigureI2CPins(periph::GPIO::config& scl_gpio, periph::GPIO::config& sda_
   scl_gpio.mode       = periph::GPIO::Mode::Alternate;
   scl_gpio.gpio       = GPIOB;
   scl_gpio.pin        = 6;
-  scl_gpio.afrl_bit   = 0x18U;
+  scl_gpio.afrl_bit_position   = 0x18U;
   scl_gpio.afrl_value = 0x4U;
 
   sda_gpio.mode       = periph::GPIO::Mode::Alternate;
   sda_gpio.gpio       = GPIOB;
   sda_gpio.pin        = 7;
-  sda_gpio.afrl_bit   = 0x1CU;
+  sda_gpio.afrl_bit_position   = 0x1CU;
   sda_gpio.afrl_value = 0x4U;
 
   periph::GPIO::SetGPIO(scl_gpio);
@@ -308,8 +311,8 @@ void State_MeasureSHTC3(){
 }
 
 void State_ReadADC(){
-  // _passNextState = false;
-  // START_ADC_CONVERTION;
+  _passNextState = false;
+  START_ADC_CONVERTION;
 }
 
 void State_SendData(){
