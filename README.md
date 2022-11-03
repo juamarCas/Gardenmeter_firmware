@@ -6,3 +6,5 @@ Almost every developing was made using CMSIS, TODO: Make a custom driver for I2C
 The other two parts of the project are:</br>
 * [STM32 Custom board](https://github.com/juamarCas/AnalogReader)
 * [MQTT Middleware](https://github.com/juamarCas/MQTT_middleware/tree/develop)
+
+## Diagram
