@@ -9,7 +9,7 @@ namespace periph{
 			
 			adc->SQR1 = 0; 
 			if( length != ADC_LENGTH_1){
-				adc->SQR1 |= (length << 0U); 
+				adc->SQR1 |= length; 
 			}
 			Enable_regulator(adc); 
 			Enable(adc); 
@@ -21,8 +21,7 @@ namespace periph{
 		//This methods implement circular mode by default
 		void DMA_Init(ADC_TypeDef * adc, DMA_Channel_TypeDef * dma_ch, std::uint16_t * buffer, std::uint32_t buffer_length,std::uint8_t length){
 			adc->SQR1 |= length;
-			
-			adc->CFGR |= ADC_CFGR_CONT; 
+			adc->CFGR &= ~ADC_CFGR_CONT; 
 			adc->CFGR |= ADC_CFGR_DMAEN | ADC_CFGR_DMACFG;
 			adc->SMPR1 |= (7U << 3U) | (7U << 6U); //max sampling rate 
 					

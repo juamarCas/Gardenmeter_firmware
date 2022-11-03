@@ -81,8 +81,7 @@ states sm_states[4] = {
 states * states_ptr;
 Payload _payload;
 
-
-
+bool finishedConvertion = false;
 
 bool _passNextState = true;
 extern "C"{
@@ -100,9 +99,6 @@ extern "C"{
   }
 
 }
-
-
-
 
 
 int main(void)
@@ -170,7 +166,7 @@ int main(void)
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_2, ADC_SQ1_2);
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_3, ADC_SQ1_3);
   periph::ADC::DMA_Init(ADC1, DMA1_Channel1, adc_dma_buffer, DMA_ADC_BUFFER_LENGTH, ADC_LENGTH_3);
-
+  //periph::ADC::Init(ADC1, ADC_LENGTH_3);
   NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
   __enable_irq();
@@ -311,8 +307,8 @@ void State_MeasureSHTC3(){
 }
 
 void State_ReadADC(){
-  _passNextState = false;
-  START_ADC_CONVERTION;
+  _passNextState = false; 
+  START_ADC_CONVERTION;  
 }
 
 void State_SendData(){
