@@ -175,7 +175,6 @@ int main(void)
   //Sensor initialization
   _shtc3.begin();
   
-  const char * data = "Hello\n";
 
   states_ptr = &sm_states[0];
   while (1)
@@ -312,8 +311,8 @@ void State_ReadADC(){
 }
 
 void State_SendData(){
-  const char * data = "hello\n";
-  periph::UART::write(USART1, data, sizeof(data) + 2);
+  const char * data = reinterpret_cast<char*>(&_payload);
+  periph::UART::write(USART1, data, sizeof(Payload));
 }
 
 void State_InitTimer(){
