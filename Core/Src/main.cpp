@@ -81,6 +81,10 @@ states sm_states[4] = {
 states * states_ptr;
 Payload _payload;
 
+std::uint16_t moist_res;
+std::uint16_t soilTemp_res;
+std::uint16_t light_res;
+
 bool finishedConvertion = false;
 
 bool _passNextState = true;
@@ -88,9 +92,9 @@ extern "C"{
   void DMA1_Channel1_IRQHandler(void){
     if(DMA1->ISR & DMA_ISR_TCIF1){
       STOP_ADC_CONVERTION;
-      _payload.moist     = adc_dma_buffer[0];
-      _payload.soil_temp = adc_dma_buffer[1];
-      _payload.light     = adc_dma_buffer[2];
+       moist_res    = adc_dma_buffer[0];
+       soilTemp_res = adc_dma_buffer[1];
+       light_res    = adc_dma_buffer[2];
       _passNextState = true;
       DMA1->IFCR |= DMA_IFCR_CTCIF1;
       gpioc13->Toggle();
@@ -311,6 +315,19 @@ void State_ReadADC(){
 }
 
 void State_SendData(){
+
+  //assuming linear behaviour in moist sensor and LDR
+  //values taken by experimenting
+  //1230 min moist pretty wet
+  //2720 max pretty dry
+  //light with 10k res 3900 most light
+  //light with 10k res 1090 less light
+  moist_res = moist_res > 2720 ? 2720: moist_res;
+
+  _payload.id = 1;
+  _payload.soil_temp = soilTemp_res;
+  _payload.light     = (std::uint8_t)utils::math::map(light_res, 1090, 3900, 0, 100);
+  _payload.moist     = (std::uint8_t)utils::math::map(moist_res, 1230, 2720, 100, 0);
   const char * data = reinterpret_cast<char*>(&_payload);
   periph::UART::write(USART1, data, sizeof(Payload));
 }

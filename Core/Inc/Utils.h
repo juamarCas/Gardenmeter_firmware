@@ -17,6 +17,10 @@ namespace utils{
 		void us(std::uint32_t us);
 		
 	}
+
+	namespace math{
+		long map(long value, long min_in, long max_in, long min_out, long max_out);
+	}
 	
 }
 

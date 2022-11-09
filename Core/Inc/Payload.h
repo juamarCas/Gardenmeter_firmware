@@ -4,12 +4,14 @@
 
 #pragma pack(1)
 typedef struct Payload_str{
-  std::uint16_t moist;
+  std::uint16_t id;
+  std::uint8_t moist;
   float env_temp;
   float env_hum;
   std::uint16_t soil_temp;
-  std::uint16_t light;
+  std::uint8_t light;
 } Payload;
 
 
 #endif
+

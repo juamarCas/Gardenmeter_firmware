@@ -39,4 +39,10 @@ namespace utils{
 			SysTick->CTRL = 0; 
 		}
 	}
+
+	namespace math{
+		long map(long value, long min_in, long max_in, long min_out, long max_out){
+			return (value - min_in) * (max_out - min_out) / (max_in - min_in) + min_out;
+		}
+	}
 }
