@@ -1,22 +1,7 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.cpp
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
+/*
+* Firmware made by: Juan D. Martín 
+* JDMC
+*/
 #include "main.h"
 #include "GPIO.h"
 #include "Utils.h"
@@ -44,8 +29,9 @@ periph::GPIO * gpioc13 = new periph::GPIO();
 SHTC3 _shtc3(&hi2c1);
 
 
-
 std::uint16_t adc_dma_buffer[DMA_ADC_BUFFER_LENGTH] = {0,0,0};
+
+void ConfigureTIMER3();
 
 void State_MeasureSHTC3();
 void State_ReadADC();
@@ -86,6 +72,8 @@ std::uint16_t soilTemp_res;
 std::uint16_t light_res;
 
 bool finishedConvertion = false;
+bool _takeData = false; 
+std::uint16_t counter = 0;
 
 bool _passNextState = true;
 extern "C"{
@@ -97,8 +85,23 @@ extern "C"{
        light_res    = adc_dma_buffer[2];
       _passNextState = true;
       DMA1->IFCR |= DMA_IFCR_CTCIF1;
-      gpioc13->Toggle();
+      
 
+    }
+  }
+
+  void  TIM3_IRQHandler(void){
+    
+    TIM3->SR &= ~TIM_SR_UIF;
+    counter++;
+    //counter ticks each second, so 3600 second each hour
+    if(counter >= 5){
+      TIM3->CR1 &= ~TIM_CR1_CEN;
+      TIM3->DIER &= ~TIM_DIER_UIE;
+      gpioc13->Toggle();
+      _takeData = true;
+      counter = 0;
+      TIM3->CR1 &= ~TIM_CR1_CEN;
     }
   }
 
@@ -133,6 +136,7 @@ int main(void)
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
 	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+  RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
   //prescale the ADC clock dividing it by 2!
   ADC12_COMMON->CCR |= (1U << 17U);
@@ -143,6 +147,7 @@ int main(void)
   gpioc13_config.pin  = 13;
   gpioc13->SetConfig(gpioc13_config);
 
+  //ConfigureTIMER3();
   ConfigureI2CPins(gpiob6_config, gpiob7_config);
   ConfigUSARTPins(gpioc4_config, gpioc5_config);
  
@@ -171,10 +176,12 @@ int main(void)
   periph::ADC::SetChannelSequence(ADC1_SQR1, ADC_CH_3, ADC_SQ1_3);
   periph::ADC::DMA_Init(ADC1, DMA1_Channel1, adc_dma_buffer, DMA_ADC_BUFFER_LENGTH, ADC_LENGTH_3);
   //periph::ADC::Init(ADC1, ADC_LENGTH_3);
+  MX_I2C1_Init();
   NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
+  // NVIC_EnableIRQ(TIM3_IRQn);
+  // NVIC_SetPriority(TIM3_IRQn, 0);
   __enable_irq();
-  MX_I2C1_Init();
 
   //Sensor initialization
   _shtc3.begin();
@@ -183,17 +190,16 @@ int main(void)
   states_ptr = &sm_states[0];
   while (1)
   {
+   // if(!_takeData) continue;
     (states_ptr->action_function)();
     while(!_passNextState){}
     states_ptr = states_ptr->next_state;
+    
   }
   
 }
 
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -206,11 +212,6 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -220,15 +221,10 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
-  {
-    Error_Handler();
-  }
 }
 
 
-static void MX_I2C1_Init(void)
+static void MX_I2C1_Init(void) 
 {
 
 
@@ -241,23 +237,23 @@ static void MX_I2C1_Init(void)
   hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
   hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+
   if (HAL_I2C_Init(&hi2c1) != HAL_OK)
   {
-    Error_Handler();
+ 
   }
   /** Configure Analogue filter
   */
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
-    Error_Handler();
+   
   }
   /** Configure Digital filter
   */
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
   {
-    Error_Handler();
+   
   }
-
 
 }
 
@@ -298,6 +294,13 @@ void ConfigureI2CPins(periph::GPIO::config& scl_gpio, periph::GPIO::config& sda_
   periph::GPIO::SetGPIO(sda_gpio);
 }
 
+void ConfigureTIMER3(){
+  TIM3->DIER |= TIM_DIER_UIE;
+  TIM3->PSC = 8000;
+  TIM3->ARR = 1000;
+  TIM3->CR1 |= TIM_CR1_CEN;
+}
+
 //STATES
 
 void State_MeasureSHTC3(){
@@ -333,19 +336,11 @@ void State_SendData(){
 }
 
 void State_InitTimer(){
-  gpioc13->Toggle();
+  // _takeData = false;
+  // TIM3->CNT = 0;
+  // TIM3->DIER |= TIM_DIER_UIE;
+  // TIM3->CR1 |= TIM_CR1_CEN;
   utils::delay::ms(2000);
 }
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  __disable_irq();
-  while (1)
-  {
-  }
-}
+ 
 
