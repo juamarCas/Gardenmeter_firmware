@@ -147,7 +147,7 @@ int main(void)
   gpioc13_config.pin  = 13;
   gpioc13->SetConfig(gpioc13_config);
 
-  //ConfigureTIMER3();
+  ConfigureTIMER3();
   ConfigureI2CPins(gpiob6_config, gpiob7_config);
   ConfigUSARTPins(gpioc4_config, gpioc5_config);
  
@@ -179,8 +179,8 @@ int main(void)
   MX_I2C1_Init();
   NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   NVIC_SetPriority(DMA1_Channel1_IRQn, 0);
-  // NVIC_EnableIRQ(TIM3_IRQn);
-  // NVIC_SetPriority(TIM3_IRQn, 0);
+  NVIC_EnableIRQ(TIM3_IRQn);
+  NVIC_SetPriority(TIM3_IRQn, 0);
   __enable_irq();
 
   //Sensor initialization
@@ -190,7 +190,7 @@ int main(void)
   states_ptr = &sm_states[0];
   while (1)
   {
-   // if(!_takeData) continue;
+    if(!_takeData) continue;
     (states_ptr->action_function)();
     while(!_passNextState){}
     states_ptr = states_ptr->next_state;
@@ -336,11 +336,11 @@ void State_SendData(){
 }
 
 void State_InitTimer(){
-  // _takeData = false;
-  // TIM3->CNT = 0;
-  // TIM3->DIER |= TIM_DIER_UIE;
-  // TIM3->CR1 |= TIM_CR1_CEN;
-  utils::delay::ms(2000);
+  _takeData = false;
+  TIM3->CNT = 0;
+  TIM3->DIER |= TIM_DIER_UIE;
+  TIM3->CR1 |= TIM_CR1_CEN;
+  //utils::delay::ms(2000);
 }
  
 
