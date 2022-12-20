@@ -97,7 +97,7 @@ extern "C"{
        light_res    = adc_dma_buffer[2];
       _passNextState = true;
       DMA1->IFCR |= DMA_IFCR_CTCIF1;
-      gpioc13->Toggle();
+      //gpioc13->Toggle();
 
     }
   }
