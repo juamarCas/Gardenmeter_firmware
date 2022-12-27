@@ -93,7 +93,8 @@ extern "C"{
     TIM3->SR &= ~TIM_SR_UIF;
     counter++;
     //counter ticks each second, so 3600 second each hour
-    if(counter >= 5){
+    //1800 every 30 mins take some data
+    if(counter >= 1800){
       TIM3->CR1 &= ~TIM_CR1_CEN;
       TIM3->DIER &= ~TIM_DIER_UIE;
       gpioc13->Toggle();
